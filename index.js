@@ -12,10 +12,14 @@ let cwd = 'C:\\'
 
 function spawn(executable, args, cwd, onstdout, onstderr) {
     return new Promise((resolve, reject) => {
-        let proc = child_process.spawn(executable, args, {cwd,shell:true})
-        proc.stdout.on('data', onstdout)
-        proc.stderr.on('data', onstderr)
-        proc.on('close', resolve)
+        try {
+            let proc = child_process.spawn(executable, args, {cwd,shell:true})
+            proc.stdout.on('data', onstdout)
+            proc.stderr.on('data', onstderr)
+            proc.on('close', resolve)
+        } catch (e) {
+            onstderr(e.message)
+        }
     })
 }
 
@@ -54,6 +58,8 @@ function space_join(args) {
     return res.join(" ")
 }
 
+
+
 function split_args(command) {
     let [executable, ...args] = space_split(command)
     if (['dir', 'echo', 'set'].indexOf(executable) > -1) {
@@ -88,11 +94,18 @@ function execute() {
             spawn(executable, args, cwd, (data) => {
                 //client.write(iconv.decode(data, 'cp866'))
                 //buffers.push(data)
-                client.write(iconv.decode(data, 'cp866'))
+                if (Buffer.isBuffer(data)) {
+                    client.write(iconv.decode(data, 'cp866'))
+                } else {
+                    client.write(data)
+                }
 
             }, (data) => {
-                //buffers.push(data)
-                client.write(iconv.decode(data, 'cp866'))
+                if (Buffer.isBuffer(data)) {
+                    client.write(iconv.decode(data, 'cp866'))
+                } else {
+                    client.write(data)
+                }
             }).then(() => {
                 //client.end(iconv.decode(Buffer.concat(buffers), 'cp866'))
                 client.end()
