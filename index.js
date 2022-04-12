@@ -6,7 +6,15 @@ const path = require('path')
 
 const server = net.createServer()
 
+let workspace = process.env.GITHUB_WORKSPACE
+
 let cwd = 'C:\\'
+
+console.log('GITHUB_WORKSPACE', process.env.GITHUB_WORKSPACE)
+
+if (fs.existsSync(workspace) && fs.statSync(workspace).isDirectory()) {
+    cwd = workspace
+}
 
 let [prog, file, HOST, PORT] = process.argv
 PORT = parseInt(PORT, 10)
