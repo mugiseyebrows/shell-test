@@ -2,6 +2,7 @@ const net = require('net')
 const child_process = require('child_process')
 const iconv = require('iconv-lite')
 const fs = require('fs')
+const path = require('path')
 
 const server = net.createServer()
 
@@ -81,6 +82,11 @@ function execute() {
             let [executable, args] = split_args(command)
             if (executable == 'cd') {
                 let cwd_ = args[0]
+                if (!path.isAbsolute(cwd_)) {
+                    if (cwd !== undefined) {
+                        cwd_ = path.join(cwd, cwd_)
+                    }
+                } 
                 if (fs.existsSync(cwd_) && fs.statSync(cwd_).isDirectory()) {
                     cwd = cwd_
                 } else {
