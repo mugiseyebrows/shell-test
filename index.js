@@ -19,13 +19,47 @@ function spawn(executable, args, cwd, onstdout, onstderr) {
     })
 }
 
+function space_split(text) {
+    var res = []
+    var item = ''
+    var in_str = false
+    for(var c of text) {
+        if (c == '"') {
+            in_str = !in_str
+            if (!in_str) {
+                res.push(item)
+                item = ''
+            } else {
+                
+            }
+        } else if (c == ' ') {
+            if (in_str) {
+                item = item + c
+            } else {
+                res.push(item)
+                item = ''
+            }
+        } else {
+            item = item + c
+        }
+    }
+    if (item.length > 0) {
+        res.push(item)
+    }
+    return res
+}
+
+function space_join(args) {
+    var res = args.map(arg => arg.indexOf(' ') > -1 ? `"${arg}"` : arg)
+    return res.join(" ")
+}
+
 function split_args(command) {
-    let [executable, ...args] = command.split(' ')
+    let [executable, ...args] = space_split(command)
     if (['dir', 'echo', 'set'].indexOf(executable) > -1) {
-        args = ["/c", executable + " " + args.join(" ")]
+        args = ["/c", executable + " " + space_join(args)]
         executable = "cmd"
     }
-    //console.log('args', args)
     return [executable, args]
 }
 
@@ -38,9 +72,8 @@ function execute() {
         client.on('data', (data) => {
             let command = data.toString()
             let [executable, args] = split_args(command)
-
             if (executable == 'cd') {
-                cwd = args[0]
+                cwd = args.join(' ')
                 executable = 'cmd'
                 args = ["/c", "echo %CD%"]
             }
@@ -51,6 +84,7 @@ function execute() {
 
             let buffers = []
 
+            console.log("executable, args, cwd", executable, args, cwd)
             spawn(executable, args, cwd, (data) => {
                 //client.write(iconv.decode(data, 'cp866'))
                 //buffers.push(data)
@@ -70,6 +104,8 @@ function execute() {
         })
     })
 }
+
+
 
 console.log('server');
 
