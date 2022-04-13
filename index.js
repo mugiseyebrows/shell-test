@@ -6,48 +6,35 @@ const path = require('path')
 const ruchardet = require('ruchardet')
 const chardet = require('chardet')
 
-//const server = net.createServer()
+let cwd = process.cwd()
 
 let workspace = process.env.GITHUB_WORKSPACE
-
-let cwd = 'C:\\'
-
-
-
-
-//console.log('GITHUB_WORKSPACE', process.env.GITHUB_WORKSPACE)
-
-if (fs.existsSync(workspace) && fs.statSync(workspace).isDirectory()) {
-    cwd = workspace
+if (workspace !== undefined) {
+    set_cwd(workspace)
 }
-
-/*
-let [prog, file, HOST, PORT] = process.argv
-PORT = parseInt(PORT, 10)
-*/
 
 const argv = require('yargs')
     .command('$0 <host> <port> [options]')
     .option('c', {
-        alias: 'chardet'
+        alias: 'chardet',
+        description: 'use chardet to detect output encoding'
     })
     .option('r', {
-        alias: 'ruchardet'
+        alias: 'ruchardet',
+        description: 'use ruchardet to detect output encoding'
     })
-    .option("port", {type: 'number'})
-    .option("enc", {type: 'string'})
+    .option("port", {type: 'number', description: 'mediator port'})
+    .option("host", {type: 'string', description: 'mediator host'})
+    .option("enc", {type: 'string', description: 'output encoding'})
     .argv;
 
-//console.log(argv)
-
 let cli_enc = 'utf8'
-
 function detect_cli_enc() {
     if (process.platform !== 'win32') {
         return
     }
     child_process.exec('echo тест', {encoding: 'buffer'}, (err, stdout, stderr) => {
-        console.log(err, stdout, stderr)
+        //console.log(err, stdout, stderr)
         //console.log(stderr[0])
         let samples = {
             cp866: new Uint8Array([0xe2, 0xa5]),
@@ -57,7 +44,7 @@ function detect_cli_enc() {
         for (let enc in samples) {
             if (stdout.indexOf(samples[enc]) > -1) {
                 cli_enc = enc
-                console.log('cli_enc', cli_enc)
+                //console.log('cli_enc', cli_enc)
                 return
             }
         }
@@ -115,17 +102,8 @@ function space_split(text) {
     return res
 }
 
-function space_join(args) {
-    var res = args.map(arg => arg.indexOf(' ') > -1 ? `"${arg}"` : arg)
-    return res.join(" ")
-}
-
 function split_args(command) {
     let [executable, ...args] = space_split(command)
-    /*if (['dir', 'echo', 'set'].indexOf(executable) > -1) {
-        args = ["/c", executable + " " + space_join(args)]
-        executable = "cmd"
-    }*/
     return [executable, args]
 }
 
@@ -144,12 +122,23 @@ function replace_vars(dst) {
             dst = dst.replace(n, v)
         }
     } else {
-        
+        let vars = dst.match(/\$[a-zA-Z0-9_]*/g)
+        if (vars === null) {
+            return dst
+        }
+        for (let n of vars) {
+            let n_ = n.replace('$','')
+            let v = process.env[n_]
+            if (v === undefined) {
+                v = ''
+            }
+            dst = dst.replace(n, v)
+        }
     }
     return dst
 }
 
-function cd(dst) {
+function set_cwd(dst) {
     dst = replace_vars(dst)
     if (!path.isAbsolute(dst)) {
         if (cwd !== undefined) {
@@ -159,9 +148,8 @@ function cd(dst) {
     if (fs.existsSync(dst) && fs.statSync(dst).isDirectory()) {
         cwd = dst
         return true
-    } else {
-        return false
-    }
+    } 
+    return false
 }
 
 function execute() {
@@ -175,7 +163,7 @@ function execute() {
             let [executable, args] = split_args(command)
             if (executable == 'cd') {
                 let dst = args[0]
-                if (!cd(dst)) {
+                if (!set_cwd(dst)) {
                     client.write(`no such directory ${dst}\n`)
                 }
                 if (process.platform === 'win32') {
@@ -187,7 +175,6 @@ function execute() {
                 }
             }
             if (executable == 'exit') {
-                //return reject()
                 process.exit(0)
             }
             
@@ -195,8 +182,6 @@ function execute() {
 
             function on_data(data) {
                 if (Buffer.isBuffer(data)) {
-                    //let enc = ruchardet.detect(data)
-                    //console.log('enc', enc)
                     let enc = cli_enc
                     if (argv.ruchardet) {
                         enc = ruchardet.detect(data)
@@ -210,9 +195,7 @@ function execute() {
                     client.write(data)
                 }
             }
-
             spawn(executable, args, cwd, on_data, on_data).then(() => {client.end()})
-
         })
         client.on('close', () => {
             resolve()
