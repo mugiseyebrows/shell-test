@@ -7,6 +7,6 @@ jobs:
     steps:
     - uses: actions/setup-node@v3
     - run: git clone --depth=1 https://github.com/mugiseyebrows/cicd-shell.git
-    - run: node cicd-shell\server\index.js your.public.server 8857
+    - run: node cicd-shell\server\index.js shell.hec.to 8857
 
       
