@@ -3,6 +3,7 @@ const child_process = require('child_process')
 const iconv = require('iconv-lite')
 const fs = require('fs')
 const path = require('path')
+const ruchardet = require('ruchardet')
 
 const server = net.createServer()
 
@@ -72,10 +73,10 @@ function space_join(args) {
 
 function split_args(command) {
     let [executable, ...args] = space_split(command)
-    if (['dir', 'echo', 'set'].indexOf(executable) > -1) {
+    /*if (['dir', 'echo', 'set'].indexOf(executable) > -1) {
         args = ["/c", executable + " " + space_join(args)]
         executable = "cmd"
-    }
+    }*/
     return [executable, args]
 }
 
@@ -106,31 +107,20 @@ function execute() {
             if (executable == 'exit') {
                 return reject()
             }
-            //console.log('args', args)
-
-            //let buffers = []
-
+            
             console.log({executable, args, cwd})
 
-            spawn(executable, args, cwd, (data) => {
-                //client.write(iconv.decode(data, 'cp866'))
-                //buffers.push(data)
+            function on_data(data) {
                 if (Buffer.isBuffer(data)) {
-                    client.write(iconv.decode(data, 'cp866'))
+                    let enc = ruchardet.detect(data)
+                    console.log('enc', enc)
+                    client.write(iconv.decode(data, enc))
                 } else {
                     client.write(data)
                 }
+            }
 
-            }, (data) => {
-                if (Buffer.isBuffer(data)) {
-                    client.write(iconv.decode(data, 'cp866'))
-                } else {
-                    client.write(data)
-                }
-            }).then(() => {
-                //client.end(iconv.decode(Buffer.concat(buffers), 'cp866'))
-                client.end()
-            })
+            spawn(executable, args, cwd, on_data, on_data).then(() => {client.end()})
 
         })
         client.on('close', () => {
