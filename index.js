@@ -34,8 +34,6 @@ function detect_cli_enc() {
         return
     }
     child_process.exec('echo тест', {encoding: 'buffer'}, (err, stdout, stderr) => {
-        //console.log(err, stdout, stderr)
-        //console.log(stderr[0])
         let samples = {
             cp866: new Uint8Array([0xe2, 0xa5]),
             cp1251: new Uint8Array([0xf2, 0xe5]),
