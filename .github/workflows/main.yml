@@ -5,10 +5,8 @@ jobs:
   main:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-      - run: npm i
-      - run: node index.js shell.hec.to 8857
-        shell: cmd
+    - uses: actions/setup-node@v3
+    - run: git clone --depth=1 https://github.com/mugiseyebrows/cicd-shell.git
+    - run: node cicd-shell\server\index.js your.public.server 8857
 
       
