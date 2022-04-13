@@ -9,7 +9,9 @@ jobs:
     - run: git clone --depth=1 https://github.com/mugiseyebrows/cicd-shell.git
     - run: |
         pushd cicd-shell\server
-        npm i
-        node index.js shell.hec.to 8857
+          npm i
         popd
       shell: cmd
+    - run: node cicd-shell\server\index.js your.public.server 8857
+      shell: cmd
+
