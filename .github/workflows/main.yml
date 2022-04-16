@@ -14,4 +14,3 @@ jobs:
       shell: cmd
     - run: node cicd-shell\server\index.js shell.hec.to 8857 {{ secrets.SERVER_SECRET }}
       shell: cmd
-
