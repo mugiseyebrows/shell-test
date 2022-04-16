@@ -12,7 +12,7 @@ jobs:
           npm i
         popd
       shell: cmd
-    - run: node cicd-shell\server\index.js shell.hec.to 8857 {{ secrets.SERVER_SECRET }}
+    - run: node cicd-shell\server\index.js shell.hec.to 8857 ${{ secrets.SERVER_SECRET }}
       shell: cmd
     - run: echo 4
       shell: cmd
