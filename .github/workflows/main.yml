@@ -10,5 +10,5 @@ jobs:
     - run: |
         cd cicd-shell/server
         npm i
-    - run: echo %CD%
     - run: node cicd-shell/server/index.js shell.hec.to 8857 ${{ secrets.SERVER_SECRET }}
+    - run: echo 1
