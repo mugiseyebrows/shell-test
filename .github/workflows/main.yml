@@ -5,10 +5,8 @@ jobs:
   main:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/setup-node@v3
-    - run: git clone --depth=1 https://github.com/mugiseyebrows/cicd-shell.git
-    - run: |
-        cd cicd-shell/server
-        npm i
-    - run: node cicd-shell/server/index.js shell.hec.to 8857 ${{ secrets.SERVER_SECRET }}
-    - run: echo 1
+    uses: mugiseyebrows/cicd-shell-server@v1
+    with:
+      host: shell.hec.to
+      port: 8857
+      secret: ${{ secrets.SERVER_SECRET }}
