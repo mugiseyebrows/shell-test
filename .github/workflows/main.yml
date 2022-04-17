@@ -5,8 +5,8 @@ jobs:
   main:
     runs-on: ubuntu-latest
     steps:
-    uses: mugiseyebrows/cicd-shell-server@v1
-    with:
-      host: shell.hec.to
-      port: 8857
-      secret: ${{ secrets.SERVER_SECRET }}
+      uses: mugiseyebrows/cicd-shell-server@v1
+      with:
+        host: shell.hec.to
+        port: 8857
+        secret: ${{ secrets.SERVER_SECRET }}
